@@ -30,9 +30,8 @@ Open **Command Prompt** or **PowerShell** inside the project folder.
 
 Create a database named:
 
-```text
-task_manager
-```
+"task_manager"
+
 
 You can create it using **pgAdmin** or `psql`.
 
@@ -80,17 +79,13 @@ The project already includes a `.env.example` file inside the `backend` folder.
 
 Inside the `backend` folder, make a copy of:
 
-```text
-.env.example
-```
+".env.example"
 
 ### Step 2 – Rename the copy
 
 Rename the copied file to:
 
-```text
-.env
-```
+".env"
 
 ### Step 3 – Update the database password
 
@@ -105,9 +100,7 @@ DB_PASSWORD=your_postgresql_password
 
 Replace:
 
-```text
-your_postgresql_password
-```
+"your_postgresql_password"
 
 with the password you created when installing PostgreSQL.
 
@@ -154,9 +147,7 @@ npm run dev
 
 Vite will display a URL, usually:
 
-```text
-http://localhost:5173
-```
+"http://localhost:5173"
 
 Open that URL in your browser.
 
@@ -180,11 +171,12 @@ cd frontend
 npm run dev
 ```
 
+Backend: npm start - runs the server directly
+Frontend: npm run dev - development mode with hot reload, npm run build - production build
+
 Then open:
 
-```text
-http://localhost:5173
-```
+"http://localhost:5173"
 
 ## Done!
 
