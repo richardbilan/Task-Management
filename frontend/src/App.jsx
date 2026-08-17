@@ -9,119 +9,58 @@ function App() {
   const [filter, setFilter] = useState('all')
   const [modal, setModal] = useState({ show: false, editing: null, form: { title: '', description: '' } })
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
 
-  useEffect(() => {
-    fetchTasks()
-  }, [])
+  useEffect(() => { fetchTasks() }, [])
 
   const fetchTasks = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch(API_URL)
-      if (!response.ok) throw new Error('Failed to fetch tasks')
-      const data = await response.json()
-      setTasks(data)
-      setError(null)
-    } catch (err) {
-      console.error('Error fetching tasks:', err)
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
+    setLoading(true)
+    const res = await fetch(API_URL)
+    setTasks(await res.json())
+    setLoading(false)
   }
 
   const filteredTasks = tasks.filter(task => {
-    const matchSearch = task.title ? task.title.toLowerCase().includes(search.toLowerCase()) : false
-    const matchFilter = filter === 'all' || (filter === 'completed' && task.completed) || (filter === 'incomplete' && !task.completed)
-    return matchSearch && matchFilter
+    const matchesSearch = task.title?.toLowerCase().includes(search.toLowerCase())
+    const matchesFilter = filter === 'all' || 
+      (filter === 'completed' && task.completed) || 
+      (filter === 'incomplete' && !task.completed)
+    return matchesSearch && matchesFilter
   })
+
+  const apiCall = async (url, options = {}) => {
+    const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...options })
+    return res.status === 204 ? null : res.json()
+  }
 
   const saveTask = async () => {
     if (!modal.form.title.trim()) return
 
-    try {
-      if (modal.editing) {
-        console.log('Sending update:', modal.form)
-        const response = await fetch(`${API_URL}/${modal.editing.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(modal.form)
-        })
-        if (!response.ok) throw new Error('Failed to update task')
-        const updatedTask = await response.json()
-        console.log('Received update:', updatedTask)
-        setTasks(tasks.map(t => t.id === modal.editing.id ? updatedTask : t))
-      } else {
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...modal.form, completed: false })
-        })
-        if (!response.ok) throw new Error('Failed to create task')
-        const newTask = await response.json()
-        setTasks([...tasks, newTask])
-      }
-      setModal({ show: false, editing: null, form: { title: '', description: '' } })
-    } catch (err) {
-      console.error('Error saving task:', err)
-      alert('Error saving task: ' + err.message)
-    }
+    const data = modal.editing
+      ? await apiCall(`${API_URL}/${modal.editing.id}`, { method: 'PUT', body: JSON.stringify(modal.form) })
+      : await apiCall(API_URL, { method: 'POST', body: JSON.stringify({ ...modal.form, completed: false }) })
+    
+    setTasks(modal.editing 
+      ? tasks.map(t => t.id === modal.editing.id ? data : t)
+      : [...tasks, data])
+    closeModal()
   }
 
   const toggleTask = async (id) => {
     const task = tasks.find(t => t.id === id)
     if (!task) return
 
-    try {
-      const response = await fetch(`${API_URL}/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...task, completed: !task.completed })
-      })
-      if (!response.ok) throw new Error('Failed to toggle task')
-      const updatedTask = await response.json()
-      setTasks(tasks.map(t => t.id === id ? updatedTask : t))
-    } catch (err) {
-      console.error('Error toggling task:', err)
-      alert('Error toggling task: ' + err.message)
-    }
+    const updated = await apiCall(`${API_URL}/${id}`, { method: 'PUT', body: JSON.stringify({ ...task, completed: !task.completed }) })
+    setTasks(tasks.map(t => t.id === id ? updated : t))
   }
 
   const deleteTask = async (id) => {
-    try {
-      await fetch(`${API_URL}/${id}`, { method: 'DELETE' })
-      setTasks(tasks.filter(t => t.id !== id))
-    } catch (err) {
-      console.error('Error deleting task:', err)
-    }
+    await apiCall(`${API_URL}/${id}`, { method: 'DELETE' })
+    setTasks(tasks.filter(t => t.id !== id))
   }
 
-  const editTask = (task) => {
-    setModal({
-      show: true,
-      editing: task,
-      form: {
-        title: task.title,
-        description: task.description
-      }
-    })
-  }
-
-  const closeModal = () => {
-    setModal({
-      show: false,
-      editing: null,
-      form: { title: '', description: '' }
-    })
-  }
-
-  const updateForm = (field, value) => {
-    setModal({
-      ...modal,
-      form: { ...modal.form, [field]: value }
-    })
-  }
+  const editTask = (task) => setModal({ show: true, editing: task, form: { title: task.title, description: task.description } })
+  const closeModal = () => setModal({ show: false, editing: null, form: { title: '', description: '' } })
+  const updateForm = (field, value) => setModal({ ...modal, form: { ...modal.form, [field]: value } })
 
   return (
     <div className="app">
@@ -131,7 +70,6 @@ function App() {
       </header>
 
       {loading && <p>Loading...</p>}
-      {error && <p style={{ color: 'red' }}>Error: {error}</p>}
 
       <div className="filters">
         {['all', 'incomplete', 'completed'].map(f => (
