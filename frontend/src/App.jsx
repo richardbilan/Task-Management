@@ -7,16 +7,24 @@ function App() {
   const [tasks, setTasks] = useState([])
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
-  const [modal, setModal] = useState({ show: false, editing: null, form: { title: '', description: '' } })
+  const [modal, setModal] = useState({ show: false, editing: null, form: { title: '', description: '' }, formError: null })
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => { fetchTasks() }, [])
 
   const fetchTasks = async () => {
-    setLoading(true)
-    const res = await fetch(API_URL)
-    setTasks(await res.json())
-    setLoading(false)
+    try {
+      setLoading(true)
+      const res = await fetch(API_URL)
+      if (!res.ok) throw new Error('Failed to fetch')
+      setTasks(await res.json())
+      setError(null)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const filteredTasks = tasks.filter(task => {
@@ -29,37 +37,53 @@ function App() {
 
   const apiCall = async (url, options = {}) => {
     const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...options })
+    if (!res.ok) throw new Error('Request failed')
     return res.status === 204 ? null : res.json()
   }
 
   const saveTask = async () => {
-    if (!modal.form.title.trim()) return
+    if (!modal.form.title.trim()) {
+      setModal(m => ({ ...m, formError: 'Title is required' }))
+      return
+    }
 
-    const data = modal.editing
-      ? await apiCall(`${API_URL}/${modal.editing.id}`, { method: 'PUT', body: JSON.stringify(modal.form) })
-      : await apiCall(API_URL, { method: 'POST', body: JSON.stringify({ ...modal.form, completed: false }) })
-    
-    setTasks(modal.editing 
-      ? tasks.map(t => t.id === modal.editing.id ? data : t)
-      : [...tasks, data])
-    closeModal()
+    try {
+      const data = modal.editing
+        ? await apiCall(`${API_URL}/${modal.editing.id}`, { method: 'PUT', body: JSON.stringify(modal.form) })
+        : await apiCall(API_URL, { method: 'POST', body: JSON.stringify({ ...modal.form, completed: false }) })
+      
+      setTasks(modal.editing 
+        ? tasks.map(t => t.id === modal.editing.id ? data : t)
+        : [...tasks, data])
+      closeModal()
+    } catch (err) {
+      setError(err.message)
+    }
   }
 
   const toggleTask = async (id) => {
     const task = tasks.find(t => t.id === id)
     if (!task) return
 
-    const updated = await apiCall(`${API_URL}/${id}`, { method: 'PUT', body: JSON.stringify({ ...task, completed: !task.completed }) })
-    setTasks(tasks.map(t => t.id === id ? updated : t))
+    try {
+      const updated = await apiCall(`${API_URL}/${id}`, { method: 'PUT', body: JSON.stringify({ ...task, completed: !task.completed }) })
+      setTasks(tasks.map(t => t.id === id ? updated : t))
+    } catch (err) {
+      setError(err.message)
+    }
   }
 
   const deleteTask = async (id) => {
-    await apiCall(`${API_URL}/${id}`, { method: 'DELETE' })
-    setTasks(tasks.filter(t => t.id !== id))
+    try {
+      await apiCall(`${API_URL}/${id}`, { method: 'DELETE' })
+      setTasks(tasks.filter(t => t.id !== id))
+    } catch (err) {
+      setError(err.message)
+    }
   }
 
   const editTask = (task) => setModal({ show: true, editing: task, form: { title: task.title, description: task.description } })
-  const closeModal = () => setModal({ show: false, editing: null, form: { title: '', description: '' } })
+  const closeModal = () => setModal({ show: false, editing: null, form: { title: '', description: '' }, formError: null })
   const updateForm = (field, value) => setModal({ ...modal, form: { ...modal.form, [field]: value } })
 
   return (
@@ -70,6 +94,7 @@ function App() {
       </header>
 
       {loading && <p>Loading...</p>}
+      {error && <p style={{ color: 'red' }}>Error: {error}</p>}
 
       <div className="filters">
         {['all', 'incomplete', 'completed'].map(f => (
@@ -84,7 +109,8 @@ function App() {
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h2>{modal.editing ? 'Edit Task' : 'Add New Task'}</h2>
-            <input type="text" placeholder="Title *" value={modal.form.title} onChange={e => updateForm('title', e.target.value)} className="modal-input" />
+            <input type="text" placeholder="Title *" value={modal.form.title} onChange={e => { updateForm('title', e.target.value); setModal(m => ({ ...m, formError: null })) }} className="modal-input" />
+            {modal.formError && <p style={{ color: 'red', fontSize: '12px', marginTop: '4px' }}>{modal.formError}</p>}
             <textarea placeholder="Description" value={modal.form.description} onChange={e => updateForm('description', e.target.value)} className="modal-textarea" />
             <div className="modal-actions">
               <button onClick={closeModal} className="cancel-btn">Cancel</button>
