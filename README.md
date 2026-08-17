@@ -1,183 +1,144 @@
-# Task Manager – Installation & Setup
+# Task Manager
 
-Follow these steps to install and run the Task Manager application on another computer.
+A fullstack task management application built with React (frontend) and Express/Node.js (backend) with PostgreSQL database.
 
-## 1. Install the Requirements
+## Project Description
 
-Install:
+A simple yet functional task management application that allows users to create, edit, delete, search, and filter tasks. The application demonstrates fullstack development principles including RESTful API design, React state management, and database operations.
 
-* **Node.js 18 or newer**
-* **PostgreSQL 14 or newer**
+## Features
 
-Check Node.js installation:
+- **Add Task** - Create new tasks with title and description
+- **Edit Task** - Update task title and description
+- **Delete Task** - Remove tasks from the list
+- **Mark Complete/Incomplete** - Toggle task completion status
+- **Search Task** - Real-time search by task title
+- **Filter Tasks** - Filter by All, Incomplete, or Completed tasks
+- **Search + Filter** - Combine search and filter for refined results
 
-```bash
-node -v
-npm -v
+## Technologies Used
+
+### Frontend
+- React 19
+- Vite
+- JavaScript (ES6+)
+
+### Backend
+- Node.js 18+
+- Express 5
+- PostgreSQL 14+
+- pg (PostgreSQL client)
+- cors
+- dotenv
+
+## How to Install/Run the Project
+
+### Prerequisites
+- Node.js 18 or newer
+- PostgreSQL 14 or newer
+
+### Installation Steps
+
+1. **Clone or copy the project to your computer**
+
+2. **Create the PostgreSQL database**
+   ```bash
+   psql -U postgres -c "CREATE DATABASE task_manager;"
+   ```
+
+3. **Import the database schema**
+   ```bash
+   psql -U postgres -d task_manager -f backend/schema.sql
+   ```
+
+4. **Set up the backend**
+   ```bash
+   cd backend
+   npm install
+   ```
+   Copy `.env.example` to `.env` and update your database password:
+   ```env
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=task_manager
+   DB_USER=postgres
+   DB_PASSWORD=your_password
+   PORT=5000
+   ```
+
+5. **Start the backend**
+   ```bash
+   npm start
+   ```
+
+6. **Set up the frontend** (in a new terminal)
+   ```bash
+   cd frontend
+   npm install
+   ```
+
+7. **Start the frontend**
+   ```bash
+   npm run dev
+   ```
+
+8. **Open the application**
+   Navigate to `http://localhost:5173`
+
+### Running the Application
+
+- **Backend**: `cd backend && npm start` - runs the server directly
+- **Frontend**: `cd frontend && npm run dev` - development mode with hot reload, `npm run build` - production build
+
+## Database Setup
+
+The database schema is defined in `backend/schema.sql`:
+
+```sql
+CREATE TABLE tasks (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  completed BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
----
+## API Endpoints
 
-## 2. Copy the Project
+| Method | Endpoint | Description | Request Body |
+|--------|----------|-------------|--------------|
+| GET | `/api/tasks` | Get all tasks | - |
+| POST | `/api/tasks` | Create new task | `{ title, description, completed }` |
+| PUT | `/api/tasks/:id` | Update task | `{ title, description, completed }` |
+| DELETE | `/api/tasks/:id` | Delete task | - |
 
-Copy the Task Manager project to your computer.
+### Error Responses
+- `400 Bad Request` - Invalid input (missing title, no fields to update)
+- `404 Not Found` - Task doesn't exist
+- `500 Internal Server Error` - Database/connection errors
 
-Open **Command Prompt** or **PowerShell** inside the project folder.
+## Folder Structure
 
----
-
-## 3. Create the PostgreSQL Database
-
-Create a database named:
-
-"task_manager"
-
-
-You can create it using **pgAdmin** or `psql`.
-
-Using `psql`:
-
-```bash
-psql -U postgres -c "CREATE DATABASE task_manager;"
 ```
-
----
-
-## 4. Import the Database
-
-Run the provided `schema.sql` file:
-
-```bash
-psql -U postgres -d task_manager -f backend/schema.sql
+task-manager/
+├── backend/
+│   ├── src/
+│   │   ├── config/
+│   │   │   └── db.js              # Database connection
+│   │   ├── controllers/
+│   │   │   └── taskController.js  # Business logic
+│   │   ├── routes/
+│   │   │   └── taskRoutes.js      # API routes
+│   │   └── server.js              # Express server
+│   ├── schema.sql                 # Database schema
+│   ├── .env.example               # Environment template
+│   └── package.json
+├── frontend/
+│   ├── src/
+│   │   ├── App.jsx                # Main component
+│   │   ├── App.css                # Component styles
+│   │   └── index.css              # Global styles
+│   └── package.json
+└── README.md
 ```
-
-Enter your PostgreSQL password when asked.
-
----
-
-## 5. Set Up the Backend
-
-Go to the backend folder:
-
-```bash
-cd backend
-```
-
-Install the required packages:
-
-```bash
-npm install
-```
-
----
-
-## 6. Set Up the `.env` File
-
-The project already includes a `.env.example` file inside the `backend` folder.
-
-### Step 1 – Copy `.env.example`
-
-Inside the `backend` folder, make a copy of:
-
-".env.example"
-
-### Step 2 – Rename the copy
-
-Rename the copied file to:
-
-".env"
-
-### Step 3 – Update the database password
-
-Open the `.env` file and make sure the database information is correct:
-
-```env
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=your_postgresql_password
-```
-
-Replace:
-
-"your_postgresql_password"
-
-with the password you created when installing PostgreSQL.
-
-> **Important:** Do not delete or modify `.env.example`. Keep it as a template for other users.
-
-
-## 7. Start the Backend
-
-While inside the `backend` folder, run:
-
-```bash
-npm start
-```
-
-**Keep this terminal open.**
-
----
-
-## 8. Set Up the Frontend
-
-Open a **new** Command Prompt or PowerShell window.
-
-Go to the frontend folder:
-
-```bash
-cd frontend
-```
-
-Install the required packages:
-
-```bash
-npm install
-```
-
----
-
-## 9. Start the Frontend
-
-Run:
-
-```bash
-npm run dev
-```
-
-Vite will display a URL, usually:
-
-"http://localhost:5173"
-
-Open that URL in your browser.
-
----
-
-## 10. Running the Application
-
-Every time you want to run the project:
-
-### Terminal 1 – Backend
-
-```bash
-cd backend
-npm start
-```
-
-### Terminal 2 – Frontend
-
-```bash
-cd frontend
-npm run dev
-```
-
-Backend: npm start - runs the server directly
-Frontend: npm run dev - development mode with hot reload, npm run build - production build
-
-Then open:
-
-"http://localhost:5173"
-
-## Done!
-
-The Task Manager application should now be running.
